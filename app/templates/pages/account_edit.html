@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Edit Account{% endblock %}
+
+{% block content %}
+<h1>Edit Account</h1>
+
+<form method="post" class="form card">
+
+    <div class="form-row">
+        <label>Name</label>
+        <input name="name" value="{{ account.name }}" required>
+    </div>
+
+    <div class="form-row">
+        <label>Institution</label>
+        <input name="institution" value="{{ account.institution or '' }}">
+    </div>
+
+    <div class="form-row">
+        <label>Account Type</label>
+        <select name="account_type" required>
+            {% for key, label in account_types.items() %}
+            <option value="{{ key }}"
+                    {{ 'selected' if key == account.account_type else '' }}>
+                {{ label }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="form-row">
+        <label>Tax Treatment</label>
+        <select name="tax_treatment">
+            <option value="">(N/A)</option>
+            {% for key, label in tax_types.items() %}
+            <option value="{{ key }}"
+                    {{ 'selected' if key == account.tax_treatment else '' }}>
+                {{ label }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="form-row">
+        <label>Currency</label>
+        <input name="currency" value="{{ account.currency }}">
+    </div>
+
+    <div class="form-actions">
+        <button class="btn-primary">Save</button>
+
+        <form method="post"
+              action="{{ url_for('accounts_ui.delete_account', account_id=account.id) }}"
+              style="display:inline">
+            <button class="btn-danger"
+                    onclick="return confirm('Delete this account?')">
+                Delete
+            </button>
+        </form>
+    </div>
+
+</form>
+{% endblock %}

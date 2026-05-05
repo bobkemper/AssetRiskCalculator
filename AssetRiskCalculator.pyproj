@@ -16,6 +16,8 @@
     <SuppressCollectPythonCloudServiceFiles>true</SuppressCollectPythonCloudServiceFiles>
     <Name>AssetRiskCalculator</Name>
     <RootNamespace>AssetRiskCalculator</RootNamespace>
+    <SuppressEnvironmentCreationPrompt>True</SuppressEnvironmentCreationPrompt>
+    <WebBrowserPort>5000</WebBrowserPort>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -27,6 +29,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="app\config.py" />
+    <Compile Include="app\constants.py" />
     <Compile Include="app\db\base.py" />
     <Compile Include="app\db\engine.py" />
     <Compile Include="app\db\init_db.py" />
@@ -57,6 +60,8 @@
     <Content Include="app\templates\base.html" />
     <Content Include="app\templates\pages\accounts.html" />
     <Content Include="app\templates\pages\account_detail.html" />
+    <Content Include="app\templates\pages\account_edit.html" />
+    <Content Include="app\templates\pages\account_new.html" />
     <Content Include="app\templates\pages\dashboard.html" />
     <Content Include="app\templates\partials\navbar.html" />
     <Content Include="requirements.txt" />

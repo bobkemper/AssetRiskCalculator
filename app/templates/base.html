@@ -10,6 +10,16 @@
 <body>
     {% include "partials/navbar.html" %}
 
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    <ul class="flash">
+        {% for msg in messages %}
+        <li>{{ msg }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    {% endwith %}
+
     <main class="container">
         {% block content %}{% endblock %}
     </main>

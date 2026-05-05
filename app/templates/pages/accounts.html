@@ -1,9 +1,13 @@
 {% extends "base.html" %}
-
 {% block title %}Accounts{% endblock %}
 
 {% block content %}
-<h1>Accounts</h1>
+<div class="header-row">
+    <h1>Accounts</h1>
+    <a href="{{ url_for('accounts_ui.new_account_form') }}">
+        + New Account
+    </a>
+</div>
 
 <table class="table">
     <thead>
@@ -11,19 +15,37 @@
             <th>Name</th>
             <th>Type</th>
             <th>Institution</th>
+            <th class="actions">Actions</th>
         </tr>
     </thead>
     <tbody>
         {% for a in accounts %}
         <tr>
-            <td>
-                <a href="{{ url_for('accounts_ui.account_detail',
+            <td>{{ a.name }}</td>
+            <td>{{ account_type_labels[a.account_type] }}</td>
+            <td>{{ a.institution or "—" }}</td>
+            <td class="actions">
+                <a href="{{ url_for('accounts_ui.edit_account_form',
                                account_id=a.id) }}">
-                    {{ a.name }}
+                    Edit
                 </a>
+
+                <form method="post"
+                      action="{{ url_for('accounts_ui.delete_account',
+                                   account_id=a.id) }}"
+                      style="display:inline">
+                    <button class="link-danger"
+                            onclick="return confirm('Delete this account?')">
+                        Delete
+                    </button>
+                </form>
             </td>
-            <td>{{ a.account_type }}</td>
-            <td>{{ a.institution }}</td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="4" class="empty">
+                No accounts yet.
+            </td>
         </tr>
         {% endfor %}
     </tbody>
