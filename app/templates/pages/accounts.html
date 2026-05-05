@@ -25,11 +25,13 @@
             <td>{{ account_type_labels[a.account_type] }}</td>
             <td>{{ a.institution or "—" }}</td>
             <td class="actions">
+                <a href="{{ url_for('register_ui.show_register', account_id=a.id) }}">
+                    Register
+                </a>
                 <a href="{{ url_for('accounts_ui.edit_account_form',
                                account_id=a.id) }}">
                     Edit
                 </a>
-
                 <form method="post"
                       action="{{ url_for('accounts_ui.delete_account',
                                    account_id=a.id) }}"

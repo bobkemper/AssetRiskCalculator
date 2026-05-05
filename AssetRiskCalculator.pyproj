@@ -37,6 +37,7 @@
     <Compile Include="app\db\__init__.py" />
     <Compile Include="app\models\account.py" />
     <Compile Include="app\models\position.py" />
+    <Compile Include="app\models\register_entry.py" />
     <Compile Include="app\models\security.py" />
     <Compile Include="app\models\transaction.py" />
     <Compile Include="app\models\__init__.py" />
@@ -45,10 +46,12 @@
     <Compile Include="app\routes\dashboard_ui.py" />
     <Compile Include="app\routes\health_routes.py" />
     <Compile Include="app\routes\portfolio_routes.py" />
+    <Compile Include="app\routes\register_ui.py" />
     <Compile Include="app\routes\transaction_routes.py" />
     <Compile Include="app\routes\__init__.py" />
     <Compile Include="app\services\account_service.py" />
     <Compile Include="app\services\portfolio_service.py" />
+    <Compile Include="app\services\register_service.py" />
     <Compile Include="app\services\transaction_service.py" />
     <Compile Include="app\services\__init__.py" />
     <Compile Include="app\__init__.py" />
@@ -63,6 +66,7 @@
     <Content Include="app\templates\pages\account_edit.html" />
     <Content Include="app\templates\pages\account_new.html" />
     <Content Include="app\templates\pages\dashboard.html" />
+    <Content Include="app\templates\pages\register.html" />
     <Content Include="app\templates\partials\navbar.html" />
     <Content Include="requirements.txt" />
   </ItemGroup>

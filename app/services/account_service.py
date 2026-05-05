@@ -1,6 +1,6 @@
 from sqlalchemy import select
 from ..models.account import Account
-
+from .register_service import RegisterService
 class AccountService:
     @staticmethod
     def list_accounts(db):
@@ -16,7 +16,17 @@ class AccountService:
             currency=payload.get("currency", "USD"),
         )
         db.add(acct)
-        db.flush()
+        db.flush
+        
+        opening_balance = payload.get("opening_balance")
+        if opening_balance:
+            RegisterService.add_opening_balance(
+                db,
+                account_id=acct.id,
+                posted_date=date.today(),
+                amount=float(opening_balance),
+            )
+
         return acct
 
     @staticmethod

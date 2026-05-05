@@ -7,6 +7,7 @@ from .routes.transaction_routes import bp as tx_bp
 from .routes.portfolio_routes import bp as portfolio_bp
 from .routes.dashboard_ui import bp as dashboard_ui
 from .routes.accounts_ui import bp as accounts_ui
+from .routes.register_ui import bp as register_ui
 
 def create_app():
     cfg = get_config()
@@ -24,4 +25,5 @@ def create_app():
 
     app.register_blueprint(dashboard_ui)
     app.register_blueprint(accounts_ui)
+    app.register_blueprint(register_ui)
     return app

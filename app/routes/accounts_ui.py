@@ -1,11 +1,12 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
 from ..db.session import get_session
 from ..services.account_service import AccountService
-
+from datetime import date
+from decimal import Decimal
+from ..services.register_service import RegisterService
 from ..constants import ACCOUNT_TYPE_LABELS, TAX_TREATMENT_LABELS
 
 bp = Blueprint("accounts_ui", __name__)
-
 
 
 @bp.get("/accounts/<int:account_id>/edit")
@@ -70,30 +71,43 @@ def list_accounts():
 
 @bp.get("/accounts/new")
 def new_account_form():
-    return render_template("pages/account_new.html")
+    return render_template(
+        "pages/account_new.html",                   
+        account_types=ACCOUNT_TYPE_LABELS,
+        tax_types=TAX_TREATMENT_LABELS,
+    )
+
+
 
 
 @bp.post("/accounts/new")
 def create_account():
     db = get_session()
+
     payload = {
-        "name": request.form.get("name", "").strip(),
+        "name": request.form["name"].strip(),
         "institution": request.form.get("institution", "").strip(),
-        "account_type": request.form.get("account_type"),
+        "account_type": request.form["account_type"],
         "tax_treatment": request.form.get("tax_treatment") or None,
         "currency": request.form.get("currency", "USD"),
     }
 
-    # Basic server-side validation
-    if not payload["name"]:
-        flash("Account name is required")
-        return redirect(url_for("accounts_ui.new_account_form"))
+    opening_balance_raw = request.form.get("opening_balance")
 
-    if not payload["account_type"]:
-        flash("Account type is required")
-        return redirect(url_for("accounts_ui.new_account_form"))
+    # Create account
+    account = AccountService.create_account(db, payload)
 
-    AccountService.create_account(db, payload)
-    flash("Account created successfully")
+    # Add opening balance as a REGISTER ENTRY (if supplied)
+    if opening_balance_raw:
+        opening_balance = Decimal(opening_balance_raw)
 
+        if opening_balance != 0:
+            RegisterService.add_opening_balance(
+                db,
+                account_id=account.id,
+                posted_date=date.today(),
+                amount=opening_balance,
+            )
+
+    flash("Account created")
     return redirect(url_for("accounts_ui.list_accounts"))

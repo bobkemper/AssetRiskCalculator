@@ -112,3 +112,35 @@ input, select {
     color: #2563eb;
     text-decoration: none;
 }
+.register-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+
+    .register-table th,
+    .register-table td {
+        padding: 0.4rem 0.6rem;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+.col-debit,
+.col-credit,
+.col-balance {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.col-date {
+    white-space: nowrap;
+}
+
+.col-type {
+    color: #6b7280;
+    font-size: 0.85rem;
+}
+
+.empty {
+    text-align: center;
+    color: #6b7280;
+}
