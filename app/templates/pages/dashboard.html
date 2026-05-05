@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<h1>Dashboard</h1>
+
+<section class="card">
+    <h2>Your Accounts</h2>
+    <ul>
+        {% for a in accounts %}
+        <li>
+            <strong>{{ a.name }}</strong>
+            ({{ a.account_type }})
+        </li>
+        {% else %}
+        <li>No accounts yet</li>
+        {% endfor %}
+    </ul>
+</section>
+{% endblock %}

@@ -1,0 +1,53 @@
+body {
+    font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+    margin: 0;
+    background: #f6f7fb;
+}
+
+.nav {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    background: #1f2937;
+    color: #fff;
+}
+
+.nav__brand {
+    font-weight: 700;
+}
+
+.nav__links {
+    list-style: none;
+    display: flex;
+    margin-left: auto;
+    gap: 1rem;
+}
+
+    .nav__links a {
+        color: #e5e7eb;
+        text-decoration: none;
+    }
+
+.container {
+    padding: 2rem;
+}
+
+.card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+    .table th, .table td {
+        padding: 0.5rem;
+        border-bottom: 1px solid #ddd;
+    }
+
+.amount {
+    text-align: right;
+}

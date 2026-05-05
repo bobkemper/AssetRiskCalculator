@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}Accounts{% endblock %}
+
+{% block content %}
+<h1>Accounts</h1>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Institution</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for a in accounts %}
+        <tr>
+            <td>
+                <a href="{{ url_for('accounts_ui.account_detail',
+                               account_id=a.id) }}">
+                    {{ a.name }}
+                </a>
+            </td>
+            <td>{{ a.account_type }}</td>
+            <td>{{ a.institution }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

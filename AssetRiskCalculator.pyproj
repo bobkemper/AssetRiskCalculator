@@ -6,7 +6,7 @@
     <ProjectGuid>bf1465a6-d47b-47ce-88a5-6b6e142b9c0e</ProjectGuid>
     <ProjectHome>.</ProjectHome>
     <ProjectTypeGuids>{789894c7-04a9-4a11-a6b5-3f4435165112};{1b580a1a-fdb3-4b32-83e1-6407eb2722e6};{349c5851-65df-11da-9384-00065b846f21};{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
-    <StartupFile>app.py</StartupFile>
+    <StartupFile>wsgi.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -26,14 +26,53 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="app.py" />
+    <Compile Include="app\config.py" />
+    <Compile Include="app\db\base.py" />
+    <Compile Include="app\db\engine.py" />
+    <Compile Include="app\db\init_db.py" />
+    <Compile Include="app\db\session.py" />
+    <Compile Include="app\db\__init__.py" />
+    <Compile Include="app\models\account.py" />
+    <Compile Include="app\models\position.py" />
+    <Compile Include="app\models\security.py" />
+    <Compile Include="app\models\transaction.py" />
+    <Compile Include="app\models\__init__.py" />
+    <Compile Include="app\routes\accounts_ui.py" />
+    <Compile Include="app\routes\account_routes.py" />
+    <Compile Include="app\routes\dashboard_ui.py" />
+    <Compile Include="app\routes\health_routes.py" />
+    <Compile Include="app\routes\portfolio_routes.py" />
+    <Compile Include="app\routes\transaction_routes.py" />
+    <Compile Include="app\routes\__init__.py" />
+    <Compile Include="app\services\account_service.py" />
+    <Compile Include="app\services\portfolio_service.py" />
+    <Compile Include="app\services\transaction_service.py" />
+    <Compile Include="app\services\__init__.py" />
+    <Compile Include="app\__init__.py" />
+    <Compile Include="scripts\bootstrap_db.py" />
+    <Compile Include="wsgi.py" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="app\static\css\app.css" />
+    <Content Include="app\templates\base.html" />
+    <Content Include="app\templates\pages\accounts.html" />
+    <Content Include="app\templates\pages\account_detail.html" />
+    <Content Include="app\templates\pages\dashboard.html" />
+    <Content Include="app\templates\partials\navbar.html" />
     <Content Include="requirements.txt" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="tests\" />
-    <Folder Include="src\" />
+    <Folder Include="app\" />
+    <Folder Include="app\db\" />
+    <Folder Include="app\models\" />
+    <Folder Include="app\static\" />
+    <Folder Include="app\static\css\" />
+    <Folder Include="app\templates\" />
+    <Folder Include="app\routes\" />
+    <Folder Include="app\services\" />
+    <Folder Include="app\templates\pages\" />
+    <Folder Include="app\templates\partials\" />
+    <Folder Include="scripts\" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.Web.targets" />
   <!-- Specify pre- and post-build commands in the BeforeBuild and 
