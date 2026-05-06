@@ -9,6 +9,11 @@ from .routes.dashboard_ui import bp as dashboard_ui
 from .routes.accounts_ui import bp as accounts_ui
 from .routes.register_ui import bp as register_ui
 from .routes.register_api import bp as register_api
+from .routes.securities_api import bp as securities_api
+from .routes.securities_ui import bp as securities_ui
+from .routes.yahoo_ingestion_ui import bp as yahoo_ingestion_ui
+from .routes.portfolio_transactions_api import bp as portfolio_transactions_api
+from .routes.portfolio_ui import bp as portfolio_ui
 
 def create_app():
     cfg = get_config()
@@ -28,5 +33,10 @@ def create_app():
     app.register_blueprint(accounts_ui)
     app.register_blueprint(register_ui)
     app.register_blueprint(register_api)
+    app.register_blueprint(securities_api)
+    app.register_blueprint(securities_ui)
+    app.register_blueprint(yahoo_ingestion_ui)
+    app.register_blueprint(portfolio_transactions_api)
+    app.register_blueprint(portfolio_ui)
 
     return app

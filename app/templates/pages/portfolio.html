@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block title %}Portfolio {{ portfolio_id }}{% endblock %}
+
+{% block content %}
+
+<!-- -------------------------------
+     TABULATOR CSS / JS
+---------------------------------->
+<link
+  href="https://cdnjs.cloudflare.com/ajax/libs/tabulator/6.3.1/css/tabulator.min.css"
+  rel="stylesheet"
+/>
+<script
+  src="https://cdnjs.cloudflare.com/ajax/libs/tabulator/6.3.1/js/tabulator.min.js"
+  defer
+></script>
+
+<h1>Portfolio {{ portfolio_id }}</h1>
+
+<!-------------------------------------------------
+  TRANSACTIONS
+-------------------------------------------------->
+<h2>Transactions</h2>
+
+<div style="margin-bottom:0.75rem;">
+  <button id="addTxBtn" class="btn-primary">
+    + Add Transaction
+  </button>
+</div>
+
+<div id="tx-table"></div>
+
+<!-------------------------------------------------
+  HOLDINGS
+-------------------------------------------------->
+<h2 style="margin-top:2rem;">Current Holdings</h2>
+<div id="holdings-table"></div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+  if (typeof Tabulator === "undefined") {
+    alert("Tabulator failed to load");
+    return;
+  }
+
+  const portfolioId = {{ portfolio_id }};
+
+  // ================================
+  // TRANSACTIONS TABLE
+  // ================================
+  const txTable = new Tabulator("#tx-table", {
+    height: "320px",
+    layout: "fitColumns",
+    ajaxURL: `/api/portfolio/${portfolioId}/transactions`,
+    addRowPos: "top",
+    placeholder: "No transactions yet. Add your first BUY to begin.",
+
+    columns: [
+      { title: "Date", field: "trade_date", editor: "input", width: 120 },
+      {
+        title: "Type",
+        field: "transaction_type",
+        editor: "list",
+        editorParams: { values: ["BUY", "SELL", "DIVIDEND", "FEE"] },
+        width: 120,
+      },
+      { title: "Security ID", field: "security_id", editor: "input", width: 120 },
+      { title: "Qty", field: "quantity", editor: "number", width: 90 },
+      { title: "Price", field: "price", editor: "number", width: 100 },
+      { title: "Cash", field: "cash_amount", editor: "number", width: 110 },
+      { title: "Notes", field: "notes", editor: "input", minWidth: 160 },
+    ],
+  });
+
+  // Add transaction button
+  document.getElementById("addTxBtn").addEventListener("click", () => {
+    txTable.addRow(
+      {
+        trade_date: new Date().toISOString().slice(0, 10),
+        transaction_type: "BUY",
+        security_id: null,
+        quantity: null,
+        price: null,
+        cash_amount: null,
+        notes: "",
+      },
+      true
+    ).then((row) => {
+      row.getCell("trade_date").edit();
+    });
+  });
+
+  // Save transaction when complete
+  txTable.on("cellEdited", async (cell) => {
+    const data = cell.getRow().getData();
+
+    if (!data.trade_date || !data.transaction_type) return;
+
+    if (
+      (data.transaction_type === "BUY" || data.transaction_type === "SELL") &&
+      (!data.security_id || !data.quantity || !data.price)
+    ) return;
+
+    if (
+      (data.transaction_type === "DIVIDEND" || data.transaction_type === "FEE") &&
+      data.cash_amount === null
+    ) return;
+
+    const res = await fetch(`/api/portfolio/${portfolioId}/transactions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+
+    const result = await res.json();
+    if (!result.ok) {
+      alert("Failed to save transaction");
+      return;
+    }
+
+    txTable.replaceData();
+    refreshHoldings();
+  });
+
+  // ================================
+  // HOLDINGS TABLE
+  // ================================
+  const holdingsTable = new Tabulator("#holdings-table", {
+    height: "320px",
+    layout: "fitColumns",
+    ajaxURL: `/api/portfolio/${portfolioId}/holdings`,
+    placeholder: "No holdings yet. Add a BUY transaction to create positions.",
+
+    columns: [
+      { title: "Security ID", field: "security_id", width: 120 },
+      { title: "Shares", field: "shares", width: 120 },
+      { title: "Price", field: "price", width: 100 },
+      {
+        title: "Market Value",
+        field: "market_value",
+        formatter: "money",
+        formatterParams: { precision: 2 },
+      },
+    ],
+  });
+
+  function refreshHoldings() {
+    holdingsTable.replaceData();
+  }
+
+  txTable.on("dataLoaded", refreshHoldings);
+
+});
+</script>
+
+{% endblock %}

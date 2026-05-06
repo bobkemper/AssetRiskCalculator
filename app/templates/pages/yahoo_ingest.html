@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Yahoo Ingestion Test{% endblock %}
+
+{% block content %}
+<h1>Yahoo Security & Price Ingestion</h1>
+
+<div style="max-width:520px; padding:1rem; border:1px solid #ccc; border-radius:6px;">
+    <div style="margin-bottom:0.5rem;">
+        <label>Symbol</label><br>
+        <input id="symbol" placeholder="AAPL" style="width:100%; padding:0.4rem;">
+    </div>
+
+    <div style="margin-bottom:0.5rem;">
+        <label>Start Date (optional)</label><br>
+        <input id="start" type="date" style="width:100%; padding:0.4rem;">
+    </div>
+
+    <div style="margin-bottom:0.5rem;">
+        <label>End Date (optional)</label><br>
+        <input id="end" type="date" style="width:100%; padding:0.4rem;">
+    </div>
+
+    <button id="runBtn" class="btn-primary">Run Yahoo Ingest</button>
+</div>
+
+<h3>Result</h3>
+<pre id="output" style="background:#111; color:#ddd; padding:1rem; max-width:900px; overflow:auto;"></pre>
+
+<script>
+document.getElementById("runBtn").addEventListener("click", async () => {
+  const symbol = document.getElementById("symbol").value.trim();
+  const start = document.getElementById("start").value;
+  const end = document.getElementById("end").value;
+
+  if (!symbol) {
+    alert("Symbol is required");
+    return;
+  }
+
+  const payload = { symbol };
+  if (start) payload.start = start;
+  if (end) payload.end = end;
+
+  const out = document.getElementById("output");
+  out.textContent = "Running ingestion...";
+
+  try {
+    const res = await fetch("/api/yahoo/ingest", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await res.json();
+    out.textContent = JSON.stringify(data, null, 2);
+
+  } catch (err) {
+    out.textContent = "ERROR: " + err;
+  }
+});
+</script>
+{% endblock %}

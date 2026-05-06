@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% block title %}Securities Master{% endblock %}
+
+{% block content %}
+<h1>Securities Master</h1>
+
+<div style="margin:0.5rem 0; display:flex; gap:0.5rem; align-items:center;">
+    <button id="addSecurityBtn" class="btn-primary">+ Add Security</button>
+    <input id="secSearch" placeholder="Search symbol or name..." style="padding:0.4rem; min-width:280px;">
+</div>
+
+<div id="securities-grid"></div>
+
+<link href="https://cdnjs.cloudflare.com/ajax/libs/tabulator/6.3.1/css/tabulator.min.css" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tabulator/6.3.1/js/tabulator.min.js" defer></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const TYPE_LIST = {{ security_type_list | tojson }};
+  const SOURCE_LIST = {{ price_source_list | tojson }};
+
+  const TYPE_LOOKUP = Object.fromEntries(TYPE_LIST.map(x => [x.value, x.label]));
+  const SOURCE_LOOKUP = Object.fromEntries(SOURCE_LIST.map(x => [x.value, x.label]));
+
+  const apiUrl = "/api/securities";
+
+  const table = new Tabulator("#securities-grid", {
+    height: "70vh",
+    layout: "fitColumns",
+    index: "id",
+    ajaxURL: apiUrl,
+    addRowPos: "top",
+    reactiveData: false,
+
+    columns: [
+      {title:"Symbol", field:"symbol", editor:"input", headerSort:false, width:120},
+      {title:"Name", field:"name", editor:"input", headerSort:false, minWidth:240},
+
+      {
+        title:"Type", field:"security_type", headerSort:false, width:140,
+        editor:"list",
+        editorParams:{ values: TYPE_LIST, sort:false },
+        formatter:"lookup",
+        formatterParams: TYPE_LOOKUP,
+      },
+
+      {title:"Exchange", field:"exchange", editor:"input", headerSort:false, width:120},
+      {title:"Currency", field:"currency", editor:"input", headerSort:false, width:90},
+      {title:"Country", field:"country", editor:"input", headerSort:false, width:90},
+
+      {
+        title:"Custom", field:"is_custom", headerSort:false, width:90,
+        formatter:"tickCross",
+        editor:true
+      },
+
+      {
+        title:"Source", field:"price_source", headerSort:false, width:140,
+        editor:"list",
+        editorParams:{ values: SOURCE_LIST, sort:false },
+        formatter:"lookup",
+        formatterParams: SOURCE_LOOKUP,
+      },
+
+      {title:"External ID", field:"external_id", editor:"input", headerSort:false, minWidth:160},
+
+      {
+        formatter:"buttonCross",
+        width:40,
+        align:"center",
+        headerSort:false,
+        cellClick: async (e, cell) => {
+          const row = cell.getRow().getData();
+          if (!row.id) { cell.getRow().delete(); return; }
+          if (!confirm("Delete this security?")) return;
+          await fetch(`/api/securities/${row.id}`, { method:"DELETE" });
+          table.replaceData();
+        }
+      }
+    ],
+  });
+
+  function normalizeDraftRow(r){
+    // normalize symbol/currency/exchange to match backend expectations
+    if (r.symbol) r.symbol = (""+r.symbol).trim().toUpperCase();
+    if (r.exchange) r.exchange = (""+r.exchange).trim().toUpperCase();
+    if (r.currency) r.currency = (""+r.currency).trim().toUpperCase();
+    return r;
+  }
+
+  async function createIfReady(rowComp){
+    const r = normalizeDraftRow(rowComp.getData());
+    if (!r.symbol || !r.name || !r.security_type) return;
+
+    const res = await fetch("/api/securities", {
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify(r),
+    });
+    const body = await res.json();
+    if (!body.ok){
+      alert(body.error || "Create failed");
+      table.replaceData();
+      return;
+    }
+    table.replaceData();
+  }
+
+  async function updateRow(rowComp){
+    const r = normalizeDraftRow(rowComp.getData());
+    const res = await fetch(`/api/securities/${r.id}`, {
+      method:"PUT",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify(r),
+    });
+    const body = await res.json();
+    if (!body.ok){
+      alert(body.error || "Update failed");
+      table.replaceData();
+      return;
+    }
+    table.replaceData();
+  }
+
+  table.on("cellEdited", async (cell) => {
+    const rowComp = cell.getRow();
+    const r = rowComp.getData();
+
+    // draft row (no id) -> POST once required fields exist
+    if (!r.id){
+      await createIfReady(rowComp);
+      return;
+    }
+
+    // existing row -> PUT
+    await updateRow(rowComp);
+  });
+
+  // Add button: inserts a draft row and focuses Symbol
+  document.getElementById("addSecurityBtn").addEventListener("click", () => {
+    table.addRow({
+      symbol:"",
+      name:"",
+      security_type:"stock",
+      exchange:"",
+      currency:"USD",
+      country:"",
+      is_custom:false,
+      price_source:"manual",
+      external_id:""
+    }, true).then((row) => {
+      row.getCell("symbol").edit();
+    });
+  });
+
+  // Search (server-side query param)
+  let searchTimer = null;
+  document.getElementById("secSearch").addEventListener("input", (e) => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => {
+      const q = e.target.value.trim();
+      if (!q) table.setData(apiUrl);
+      else table.setData(`${apiUrl}?q=${encodeURIComponent(q)}`);
+    }, 200);
+  });
+});
+</script>
+
+{% endblock %}
