@@ -39,11 +39,62 @@ const ENTRY_TYPE_LOOKUP = Object.fromEntries(
 const accountId = {{ account.id }};
 const apiListUrl = `/api/accounts/${accountId}/register`;
 
+    // --- Smart defaults, per account ---
+    const DEFAULT_KEY = `registerDefaults:${accountId}`;
+
+    function loadDefaults() {
+        try {
+            return JSON.parse(localStorage.getItem(DEFAULT_KEY) || "{}");
+        } catch {
+            return {};
+        }
+    }
+
+    function saveDefaults(patch) {
+        const cur = loadDefaults();
+        localStorage.setItem(DEFAULT_KEY, JSON.stringify({ ...cur, ...patch }));
+    }
+
+    // current defaults state
+    let defaults = loadDefaults();
+
+    // ensure a baseline
+    if (!defaults.lastType) defaults.lastType = ENTRY_TYPE_LIST[0].value; // withdrawal
+    if (!defaults.lastSide) defaults.lastSide = "debit"; // debit|credit
+
 /* =========================================================
    HELPERS
 ========================================================= */
 const isBlank = v => v === null || v === undefined || v === "";
+    function typeToSide(type) {
+        const debitTypes = new Set(["withdrawal", "fee", "transfer_out"]);
+        const creditTypes = new Set(["deposit", "interest", "transfer_in", "opening"]);
 
+        if (debitTypes.has(type)) return "debit";
+        if (creditTypes.has(type)) return "credit";
+        return "debit";
+    }
+
+    function applyTypeBehavior(rowComp) {
+        const data = rowComp.getData();
+        const type = data.entry_type;
+        if (!type) return;
+
+        const side = typeToSide(type);
+        const patch = (side === "debit")
+            ? { credit: null }   // clear opposite
+            : { debit: null };
+
+        // ✅ Correct usage: update with real field/value pairs
+        rowComp.update(patch);
+
+        // Focus the appropriate amount cell
+        setTimeout(() => {
+            const amountCell = rowComp.getCell(side); // RowComponent.getCell() [1](https://tabulator.info/docs/6.4/components)
+            if (amountCell) amountCell.edit();
+        }, 0);
+    }
+    
 function toNumberOrNull(v) {
   if (isBlank(v)) return null;
   const n = typeof v === "number" ? v : parseFloat(v);
@@ -148,24 +199,29 @@ table.on("cellEditing", cell => {
     }
   });
 });
+    function pickDefaultType() {
+        // If user last explicitly picked a type, honor it
+        if (defaults.lastType) return defaults.lastType;
 
-/* =========================================================
-   ADD DRAFT ROW
-========================================================= */
-function addDraftRow(focus="description") {
-  table.addRow({
-    posted_date: new Date().toISOString().slice(0,10),
-    description: "",
-    entry_type: ENTRY_TYPE_LIST[0].value, // ✅ Withdrawal
-    debit: null,
-    credit: null,
-    balance: null,
-  }, false).then(row => {
-    row.scrollTo();
-    row.getCell(focus).edit();
-  });
-}
+        // Otherwise infer from last side
+        return defaults.lastSide === "credit" ? "deposit" : "withdrawal";
+    }
 
+    function addDraftRow(focus = "posted_date") {
+        const type = pickDefaultType();
+
+        table.addRow({
+            posted_date: new Date().toISOString().slice(0, 10),
+            description: "",
+            entry_type: type,
+            debit: null,
+            credit: null,
+            balance: null,
+        }, false).then(row => {
+            row.scrollTo();
+            row.getCell(focus).edit();
+        });
+    }
 /* =========================================================
    SAVE LOGIC
 ========================================================= */
@@ -174,6 +230,15 @@ table.on("cellEdited", async cell => {
   const row = rowComp.getData();
   const field = cell.getField();
 
+    // If user picked a Type, route them to the correct amount column
+    if (field === "entry_type") {
+        applyTypeBehavior(rowComp);
+        return; // don't attempt to save yet (amount isn't entered)
+    }
+    if (field === "entry_type" && row.entry_type) {
+        defaults.lastType = row.entry_type;
+        saveDefaults({ lastType: defaults.lastType });
+    }
   if (field === "debit" && toNumberOrNull(row.debit) !== null)
     rowComp.update({ credit:null });
 
@@ -188,7 +253,19 @@ table.on("cellEdited", async cell => {
     alert("Enter either Debit or Credit (not both).");
     await reload();
     return;
-  }
+    }
+    if (field === "debit" && debit !== null) {
+        defaults.lastSide = "debit";
+        // Optional: if lastType was generic, steer it
+        if (["deposit"].includes(defaults.lastType)) defaults.lastType = "withdrawal";
+        saveDefaults({ lastSide: defaults.lastSide, lastType: defaults.lastType });
+    }
+
+    if (field === "credit" && credit !== null) {
+        defaults.lastSide = "credit";
+        if (["withdrawal"].includes(defaults.lastType)) defaults.lastType = "deposit";
+        saveDefaults({ lastSide: defaults.lastSide, lastType: defaults.lastType });
+    }
 
   if (isBlank(row.posted_date) || isBlank(row.description) || isBlank(row.entry_type))
     return;
