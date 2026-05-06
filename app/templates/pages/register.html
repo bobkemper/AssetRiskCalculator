@@ -3,83 +3,230 @@
 
 {% block content %}
 
-<div class="header-row">
-    <div>
-        <h1>{{ account.name }} – Register</h1>
-        <div class="subtle">Current balance: {{ "%.2f"|format(current_balance) }}</div>
-    </div>
-</div>
+<h1>{{ account.name }} – Register</h1>
 
-<table class="register-table">
-    <thead>
-        <tr>
-            <th class="col-date">Date</th>
-            <th class="col-desc">Description</th>
-            <th class="col-type">Type</th>
-            <th class="col-debit">Debit</th>
-            <th class="col-credit">Credit</th>
-            <th class="col-balance">Balance</th>
-        </tr>
-    </thead>
+<div id="register-grid"></div>
 
-    <tbody>
-        {% for r in rows %}
-        <tr>
-            <td class="col-date">{{ r.posted_date }}</td>
-            <td class="col-desc">{{ r.description }}</td>
-            <td class="col-type">{{ entry_type_labels[r.entry_type] }}</td>
+<!-- ✅ CORRECT CLOUDFLARE LINKS -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/tabulator/6.3.1/css/tabulator.min.css"
+      rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tabulator/6.3.1/js/tabulator.min.js"
+        defer></script>
 
-            <td class="col-debit">
-                {% if r.debit %}{{ "%.2f"|format(r.debit) }}{% endif %}
-            </td>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
 
-            <td class="col-credit">
-                {% if r.credit %}{{ "%.2f"|format(r.credit) }}{% endif %}
-            </td>
+/* =========================================================
+   ENTRY TYPE DEFINITIONS (ORDER + FRIENDLY LABELS)
+========================================================= */
+const ENTRY_TYPE_LIST = [
+  { label: "Withdrawal",      value: "withdrawal" },
+  { label: "Deposit",         value: "deposit" },
+  { label: "Transfer Out",    value: "transfer_out" },
+  { label: "Transfer In",     value: "transfer_in" },
+  { label: "Interest",        value: "interest" },
+  { label: "Fee",             value: "fee" },
+  { label: "Opening Balance", value: "opening" },
+];
 
-            <td class="col-balance">{{ "%.2f"|format(r.balance) }}</td>
-        </tr>
-        {% else %}
-        <tr class="empty">
-            <td colspan="6">No entries yet.</td>
-        </tr>
-        {% endfor %}
-    </tbody>
+const ENTRY_TYPE_LOOKUP = Object.fromEntries(
+  ENTRY_TYPE_LIST.map(o => [o.value, o.label])
+);
 
-    {# --- Blank “new entry” row (register-style) --- #}
-    <tfoot>
-        <tr class="new-row">
-            <form method="post" action="{{ url_for('register_ui.add_register_row', account_id=account.id) }}">
-            <td class="col-date">
-                <input type="date" name="posted_date" value="{{ today }}" required>
-            </td>
+/* =========================================================
+   CONFIG
+========================================================= */
+const accountId = {{ account.id }};
+const apiListUrl = `/api/accounts/${accountId}/register`;
 
-            <td class="col-desc">
-                <input name="description" placeholder="Description" required>
-            </td>
+/* =========================================================
+   HELPERS
+========================================================= */
+const isBlank = v => v === null || v === undefined || v === "";
 
-            <td class="col-type">
-                <select name="entry_type" required>
-                    {% for key, label in entry_types %}
-                    <option value="{{ key }}">{{ label }}</option>
-                    {% endfor %}
-                </select>
-            </td>
+function toNumberOrNull(v) {
+  if (isBlank(v)) return null;
+  const n = typeof v === "number" ? v : parseFloat(v);
+  return Number.isNaN(n) ? null : n;
+}
 
-            <td class="col-debit">
-                <input type="number" step="0.01" name="debit" placeholder="0.00">
-            </td>
+function money(cell) {
+  const v = toNumberOrNull(cell.getValue());
+  return v === null ? "" : v.toFixed(2);
+}
 
-            <td class="col-credit">
-                <input type="number" step="0.01" name="credit" placeholder="0.00">
-            </td>
+async function reload() {
+  await table.replaceData();
+}
 
-            <td class="col-balance">
-                <button class="btn-primary" type="submit">Add</button>
-            </td>
-            </form>
-        </tr>
-    </tfoot>
-</table>
+async function postRow(payload) {
+  const r = await fetch(`/api/accounts/${accountId}/register`, {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(payload),
+  });
+  if (!r.ok) throw new Error(await r.text());
+}
+
+async function putRow(id, payload) {
+  const r = await fetch(`/api/register/${id}`, {
+    method: "PUT",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(payload),
+  });
+  if (!r.ok) throw new Error(await r.text());
+}
+
+/* =========================================================
+   TABLE
+========================================================= */
+const table = new Tabulator("#register-grid", {
+  height: "70vh",
+  layout: "fitColumns",
+  index: "id",
+  ajaxURL: apiListUrl,
+  addRowPos: "bottom",
+  keybindings: true,
+
+  columns: [
+    { title:"Date", field:"posted_date", editor:"input", width:120, headerSort:false },
+    { title:"Description", field:"description", editor:"input", minWidth:260, headerSort:false },
+
+    {
+      title: "Type",
+      field: "entry_type",
+      editor: "list",
+      editorParams: {
+        values: ENTRY_TYPE_LIST,
+        sort: false,
+      },
+      formatter: "lookup",
+      formatterParams: ENTRY_TYPE_LOOKUP,
+      width: 190,
+      headerSort: false,
+    },
+
+    { title:"Debit", field:"debit", hozAlign:"right",
+      editor:"number", editorParams:{step:0.01}, formatter:money, width:120, headerSort:false },
+
+    { title:"Credit", field:"credit", hozAlign:"right",
+      editor:"number", editorParams:{step:0.01}, formatter:money, width:120, headerSort:false },
+
+    { title:"Balance", field:"balance", hozAlign:"right",
+      formatter:money, width:130, headerSort:false },
+
+    {
+      formatter:"buttonCross",
+      width:40,
+      align:"center",
+      headerSort:false,
+      cellClick: async (e, cell) => {
+        const row = cell.getRow().getData();
+        if (!row.id) return;
+        if (!confirm("Delete this entry?")) return;
+        await fetch(`/api/register/${row.id}`, { method:"DELETE" });
+        await reload();
+      }
+    }
+  ]
+});
+
+/* =========================================================
+   ENTER → NEXT CELL
+========================================================= */
+table.on("cellEditing", cell => {
+  const el = cell.getElement();
+  const input = el.querySelector("input,select,textarea");
+  if (!input || input.dataset.enterBound) return;
+  input.dataset.enterBound = "1";
+
+  input.addEventListener("keydown", e => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      input.blur();
+      table.navigateNext();
+    }
+  });
+});
+
+/* =========================================================
+   ADD DRAFT ROW
+========================================================= */
+function addDraftRow(focus="description") {
+  table.addRow({
+    posted_date: new Date().toISOString().slice(0,10),
+    description: "",
+    entry_type: ENTRY_TYPE_LIST[0].value, // ✅ Withdrawal
+    debit: null,
+    credit: null,
+    balance: null,
+  }, false).then(row => {
+    row.scrollTo();
+    row.getCell(focus).edit();
+  });
+}
+
+/* =========================================================
+   SAVE LOGIC
+========================================================= */
+table.on("cellEdited", async cell => {
+  const rowComp = cell.getRow();
+  const row = rowComp.getData();
+  const field = cell.getField();
+
+  if (field === "debit" && toNumberOrNull(row.debit) !== null)
+    rowComp.update({ credit:null });
+
+  if (field === "credit" && toNumberOrNull(row.credit) !== null)
+    rowComp.update({ debit:null });
+
+  const debit = toNumberOrNull(row.debit);
+  const credit = toNumberOrNull(row.credit);
+
+  if (debit === null && credit === null) return;
+  if (debit !== null && credit !== null) {
+    alert("Enter either Debit or Credit (not both).");
+    await reload();
+    return;
+  }
+
+  if (isBlank(row.posted_date) || isBlank(row.description) || isBlank(row.entry_type))
+    return;
+
+  const payload = {
+    posted_date: row.posted_date,
+    description: row.description,
+    entry_type: row.entry_type,
+    debit,
+    credit,
+  };
+
+  try {
+    if (!row.id) await postRow(payload);
+    else await putRow(row.id, payload);
+
+    await reload();
+
+    if (field === "debit" || field === "credit")
+      addDraftRow();
+
+  } catch (err) {
+    alert(err.message || "Save failed");
+    await reload();
+  }
+});
+
+/* =========================================================
+   ADD ROW BUTTON
+========================================================= */
+const btn = document.createElement("button");
+btn.textContent = "+ Add Row";
+btn.className = "btn-primary";
+btn.style.margin = "0.5rem 0";
+btn.onclick = () => addDraftRow();
+document.querySelector("h1").after(btn);
+
+});
+</script>
 
 {% endblock %}

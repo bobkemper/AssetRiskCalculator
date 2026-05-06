@@ -46,6 +46,7 @@
     <Compile Include="app\routes\dashboard_ui.py" />
     <Compile Include="app\routes\health_routes.py" />
     <Compile Include="app\routes\portfolio_routes.py" />
+    <Compile Include="app\routes\register_api.py" />
     <Compile Include="app\routes\register_ui.py" />
     <Compile Include="app\routes\transaction_routes.py" />
     <Compile Include="app\routes\__init__.py" />
